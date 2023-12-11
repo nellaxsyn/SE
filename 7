@@ -1,0 +1,178 @@
+Write a program that converts an infix expression into an equivalent postfix expression. The
+rules to convert an infix expression into an equivalent postfix expression are as follows:
+
+Suppose infx represents the infix expression and pfx represents the postfix expression. The
+rules to convert infx into pfx are as follows:
+a. Initialize pfx to an empty expression and also initialize the stack.
+b. Get the next symbol, sym, from infx.
+b.1. If sym is an operand, append sym to pfx.
+b.2. If sym is (, push sym into the stack.
+b.3. If sym is ), pop and append all the symbols from the stack until the most recent
+left parenthesis. Pop and discard the left parenthesis.
+b.4. If sym is an operator:
+b.4.1. Pop and append all the operators from the stack to pfx that are above the
+most recent left parenthesis and have precedence greater than or equal to
+sym.
+b.4.2. Push sym onto the stack.
+c. After processing infx, some operators might be left in the stack. Pop and append to
+pfx everything from the stack.
+In this program, you will consider the following (binary) arithmetic operators: +, -, *, /.
+You may assume that the expressions you will process are error free.
+Design a class that stores the infix and postfix strings. The class must include the
+following operations:
+• getInfix—Stores the infix expression
+• showInfix—Outputs the infix expression
+• showPostfix—Outputs the postfix expression
+Some other operations that you might need are the following:
+• convertToPostfix—Converts the infix expression into a postfix expression. The
+resulting postfix expression is stored in pfx.
+• precedence—Determines the precedence between two operators. If the first
+operator is of higher or equal precedence than the second operator, it returns the
+value true; otherwise, it returns the value false.
+Include the constructors and destructors for automatic initialization and dynamic memory
+deallocation.
+Test your program on the following five expressions:
+A + B - C;
+(A + B ) * C;
+(A + B) * (C - D);
+A + ((B + C) * (E - F) - G) / (H - I);
+A + B * (C + D ) - E / F * G + H;
+For each expression, your answer must be in the following form:
+Infix Expression: A + B - C;
+Postfix Expression: A B + C -
+
+
+
+
+ANSWER
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+
+#define MAX_SIZE 100
+
+// Define the Stack structure
+struct Stack {
+    char items[MAX_SIZE];
+    int top;
+};
+
+// Define the InfixToPostfixConverter class
+struct InfixToPostfixConverter {
+    char infix[MAX_SIZE];
+    char postfix[MAX_SIZE];
+    struct Stack stack;
+};
+
+// Function prototypes
+void initializeStack(struct Stack *stack);
+bool isStackEmpty(struct Stack *stack);
+void push(struct Stack *stack, char item);
+char pop(struct Stack *stack);
+int precedence(char operator1, char operator2);
+void convertToPostfix(struct InfixToPostfixConverter *converter);
+void getInfix(struct InfixToPostfixConverter *converter);
+void showInfix(struct InfixToPostfixConverter *converter);
+void showPostfix(struct InfixToPostfixConverter *converter);
+
+int main() {
+    struct InfixToPostfixConverter converter;
+
+    getInfix(&converter);
+    convertToPostfix(&converter);
+
+    printf("Infix Expression: ");
+    showInfix(&converter);
+    printf("Postfix Expression: ");
+    showPostfix(&converter);
+
+    return 0;
+}
+
+// Function to initialize the stack
+void initializeStack(struct Stack *stack) {
+    stack->top = -1;
+}
+
+// Function to check if the stack is empty
+bool isStackEmpty(struct Stack *stack) {
+    return stack->top == -1;
+}
+
+// Function to push an item onto the stack
+void push(struct Stack *stack, char item) {
+    if (stack->top < MAX_SIZE - 1) {
+        stack->items[++stack->top] = item;
+    } else {
+        printf("Stack overflow\n");
+        exit(EXIT_FAILURE);
+    }
+}
+
+// Function to pop an item from the stack
+char pop(struct Stack *stack) {
+    if (!isStackEmpty(stack)) {
+        return stack->items[stack->top--];
+    } else {
+        printf("Stack underflow\n");
+        exit(EXIT_FAILURE);
+    }
+}
+
+// Function to determine the precedence of operators
+int precedence(char operator1, char operator2) {
+    if (operator1 == '*' || operator1 == '/') {
+        return (operator2 == '+' || operator2 == '-') ? 1 : 0;
+    } else if (operator1 == '+' || operator1 == '-') {
+        return (operator2 == '*' || operator2 == '/') ? -1 : 0;
+    }
+    return 0;
+}
+
+// Function to convert infix to postfix
+void convertToPostfix(struct InfixToPostfixConverter *converter) {
+    initializeStack(&converter->stack);
+    int i, j;
+    char sym, topSymbol;
+
+    for (i = 0, j = 0; (sym = converter->infix[i]) != '\0'; i++) {
+        if (sym >= 'A' && sym <= 'Z') {
+            converter->postfix[j++] = sym;
+        } else if (sym == '(') {
+            push(&converter->stack, sym);
+        } else if (sym == ')') {
+            while ((topSymbol = pop(&converter->stack)) != '(') {
+                converter->postfix[j++] = topSymbol;
+            }
+        } else if (sym == '+' || sym == '-' || sym == '*' || sym == '/') {
+            while (!isStackEmpty(&converter->stack) &&
+                   precedence(converter->stack.items[converter->stack.top], sym) >= 0) {
+                converter->postfix[j++] = pop(&converter->stack);
+            }
+            push(&converter->stack, sym);
+        }
+    }
+
+    while (!isStackEmpty(&converter->stack)) {
+        converter->postfix[j++] = pop(&converter->stack);
+    }
+
+    converter->postfix[j] = '\0';
+}
+
+// Function to get infix expression from user input
+void getInfix(struct InfixToPostfixConverter *converter) {
+    printf("Enter the infix expression: ");
+    fgets(converter->infix, sizeof(converter->infix), stdin);
+}
+
+// Function to display infix expression
+void showInfix(struct InfixToPostfixConverter *converter) {
+    printf("%s\n", converter->infix);
+}
+
+// Function to display postfix expression
+void showPostfix(struct InfixToPostfixConverter *converter) {
+    printf("%s\n", converter->postfix);
+}
